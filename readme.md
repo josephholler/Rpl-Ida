@@ -1,40 +1,31 @@
-If you use this template for research, please [cite it](template_reference.bib):
-> Kedron, P., & Holler, J. (2023). Template for Reproducible and Replicable Research in Human-Environment and Geographical Sciences. https://doi.org/10.17605/OSF.IO/W29MQ
-
-# Title of Study
+# RPl-Ida
 
 ## Contributors
 
-- First Name Last Name\*, email address, @githubname, ORCID link, affiliated institution(s)
-- First Name Last Name, email address, @githubname, ORCID link, affiliated institution(s)
+- Elise Chan\*, elisec@middlebury.edu, @eliseylchan, Middlebury College
 
 \* Corresponding author and creator
 
 ## Abstract
 
-Write a brief abstract about your research project.
-If the project is a reproduction or replication study, include the full citation with a statement
-This study is a *reproduction/replication* of:
+This study is a replication of J. Holler's research project contrasting fake Twitter storms with real hurricanes. The original project uses Hurricane Dorian, and this replication uses Hurricane Ida. 
 
-> citation to prior study
+This study is a *replication* of:
 
-A graphical abstract of the study could also be included as an image here.
+> https://github.com/GIS4DEV/OR-Dorian
+
 
 ## Study Metadata
 
-- `Key words`: Comma-separated list of keywords (tags) for searchability. Geographers often use one or two keywords each for: theory, geographic context, and methods.
-- `Subject`: select from the [BePress Taxonomy](http://digitalcommons.bepress.com/cgi/viewcontent.cgi?article=1008&context=reference)
-- `Date created`: date when project was started
-- `Date modified`: date of most recent revision
+- `Key words`: hurricane, Ida, Twitter
+- `Subject`: Geography: Nature and Society Relations
+- `Date created`: 11/28/2023
+- `Date modified`: 11/28/2023
 - `Spatial Coverage`: Specify the geographic extent of your study. This may be a place name and link to a feature in a gazetteer like GeoNames or OpenStreetMap, or a well known text (WKT) representation of a bounding box.
 - `Spatial Resolution`: Specify the spatial resolution as a scale factor, description of the level of detail of each unit of observation (including administrative level of administrative areas), and/or or distance of a raster GRID size
 - `Spatial Reference System`: Specify the geographic or projected coordinate system for the study
 - `Temporal Coverage`: Specify the temporal extent of your study---i.e. the range of time represented by the data observations.
 - `Temporal Resolution`: Specify the temporal resolution of your study---i.e. the duration of time for which each observation represents or the revisit period for repeated observations
-- `Funding Name`: name of funding for the project
-- `Funding Title`: title of project grant
-- `Award info URI`: web address for award information
-- `Award number`: award number
 
 ## Related to
 
@@ -44,7 +35,7 @@ A graphical abstract of the study could also be included as an image here.
 - `Preprint`:
 - `Conference Presentation`:
 - `Publication`:
-- `Prior Study`:
+- `Prior Study`: https://github.com/GIS4DEV/OR-Dorian
 - `...`:
 
 ## Metadata for access
@@ -78,5 +69,6 @@ Important local **documents** include:
 
 The [template_readme.md](template_readme.md) file contains more information on the design of this template and references used in the design.
 The [Template_LICENSE](Template_LICENSE) file provides the BSD 3-Clause license for using this template.
-To cite the template, please use [template_reference.bib](template_reference.bib) or:
+This template was created by:
 > Kedron, P., & Holler, J. (2023). Template for Reproducible and Replicable Research in Human-Environment and Geographical Sciences. https://doi.org/10.17605/OSF.IO/W29MQ
+See [template_reference.bib](template_reference.bib) for the template citation.
