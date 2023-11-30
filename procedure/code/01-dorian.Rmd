@@ -29,13 +29,28 @@ that the working directory is the root directory of the repository.
 ```{r setup, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
+# install r version from 9-10-2021
+if(!require(groundhog)){
+  install.packages("groundhog")
+  require(groundhog)
+}
+
+if(!require(here)){
+  install.packages("here")
+  require(here)
+}
+
+groundhog.day <- "2021-09-10"
+set.groundhog.folder(here("data", "scratch", "groundhog"))
+
+groundhog.library(packages, groundhog.day)
 # list of required packages
 packages <- c(
   "here", "svDialogs", "tidyverse",
-  "rtweet", "rehydratoR",
   "tidytext", "tm", "igraph", "ggraph",
   "tidycensus", "sf", "spdep"
 )
+
 
 # additional packages: test which are still needed:
 # "maps", "tm", "RColorBrewer", "rccmisc",
@@ -54,21 +69,20 @@ package_check <- lapply(
 
 ```{r}
 # installing a previous version of rtweet
-# in 2021, would have been version 0.7.0. In Nov 2023, we're on 1.1.0
+# in 2021, would have been version 0.7.0.
+
+install_version("rtweet", version = "0.7.0")
+library(rtweet)
 
 # Install the 'remotes' package if you haven't already
 install.packages("remotes")
-
 # Load the 'remotes' package
 library(remotes)
-
-# Install a specific version of 'rtweet'
-install_version("rtweet", version = "0.7.0")  # Replace "0.7.0" with the version you want
 
 ```
 
 
-```{r save R processing environment}
+```{r save R processing environment, eval = FALSE}
 # save the R processing environment, including date in file name
 writeLines(
   capture.output(sessionInfo()),
@@ -260,7 +274,7 @@ the data with the code block below.
 
 ```{r load-original}
 dorian_raw <- readRDS(here("data", "raw", "private", "dorian_raw.RDS"))
-november_raw <- readRDS(here("data", "raw", "private", "november_raw.RDS"))
+november_raw <- readRDS(here("data", "raw", "private", "november_raw.RDS")) # for Ida use different baseline dataset
 ```
 
 ## Process geographic data in tweets
@@ -289,9 +303,8 @@ the data has already been processed.
 ```{r lat-long}
 # convert GPS coordinates into lat and lng columns
 # do not use geo_coords! Lat/Lng will be inverted
-dorian <- lat_lng(dorian_raw, coords = c("coords_coords"), prefs = "coords_coords")
-# 11/27/23 errors - wanted prefs, but then invalid length argument. has to do with numeric? lots of them don't have coordinates?
-november <- lat_lng(november_raw, coords = c("coords_coords"), prefs = "coords_coords")
+dorian <- lat_lng(dorian_raw, coords = c("coords_coords"))
+november <- lat_lng(november_raw, coords = c("coords_coords"))
 
 # select any tweets with lat and lng columns (from GPS) or
 # designated place types of your choosing
@@ -314,6 +327,7 @@ november <- lat_lng(november, coords = c("bbox_coords"))
 # re-check counts of place types
 count(dorian, place_type)
 ```
+
 
 ### Save processed tweets
 
