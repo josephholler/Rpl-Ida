@@ -71,6 +71,7 @@ package_check <- lapply(
 # installing a previous version of rtweet
 # in 2021, would have been version 0.7.0.
 
+library(devtools)
 install_version("rtweet", version = "0.7.0")
 library(rtweet)
 
@@ -485,7 +486,8 @@ census_api_key(dlgInput(
   "Enter a Census API Key",
   Sys.getenv("CENSUS_API_KEY")
 )$res,
-overwrite = TRUE
+overwrite = TRUE,
+install = TRUE
 )
 
 counties <- get_estimates(

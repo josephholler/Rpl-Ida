@@ -6,9 +6,9 @@ output: html_document
 ---
 
 # Hurricane Ida Outage on Twitter
-Author: Joseph Holler
+Author: Joseph Holler, Elise Chan
 Created: Fall 2019
-Updated: Fall 2021
+Updated: Fall 2023
 
 This analysis is based off of a previous study of Hurricane event
 - https://www.github.com/gis4dev/OR-Dorian  
@@ -78,8 +78,8 @@ install.packages("remotes")
 library(remotes)
 
 # Install a specific version of 'rtweet'
-
 #detach("package:rtweet", unload = TRUE)
+library(devtools)
 install_version("rtweet", version = "0.7.0")
 library(rtweet)
 
@@ -412,7 +412,7 @@ write.table(tevent$status_id,
   here("data", "derived", "public", "teventids.txt"),
   append = FALSE, quote = FALSE, row.names = FALSE, col.names = FALSE
 )
-saveRDS(tevent, here("data", "derived", "private", "tevent.RDS"))
+saveRDS(tevent, here("data", "derived", "private", "tevent_all.RDS"))
 
 # save control data
 write.table(tdcontrol$status_id,
@@ -430,7 +430,7 @@ Optionally,
 Load processed twitter data
 
 ```{r load-processed-tweets, eval = FALSE }
-tevent <- readRDS(here("data", "derived", "private", "tevent.RDS"))
+tevent <- readRDS(here("data", "derived", "private", "tevent_all.RDS"))
 tdcontrol <- readRDS(here("data", "derived", "private", "tdcontrol.RDS"))
 ```
 
@@ -439,8 +439,8 @@ tdcontrol <- readRDS(here("data", "derived", "private", "tdcontrol.RDS"))
 Create a temporal data frame and graph it
 
 ```{r temporal}
-tevent_tweets_by_hour <- ts_data(tevent_raw, by = "hours")
-ts_plot(tevent_raw, by = "hours")
+tevent_tweets_by_hour <- ts_data(tevent, by = "hours")
+ts_plot(tevent, by = "hours")
 ```
 
 # Network Analysis
@@ -607,7 +607,7 @@ counties <- filter(
   STATEFP %in% c(
     "54", "51", "50", "47", "45", "44", "42", "39", "37", "36", "05", "01",
     "34", "33", "29", "28", "25", "24", "23", "22", "21", "18", "17", "13",
-    "12", "11", "10", "09", "48", "40", "20"
+    "12", "11", "10", "09", "48", "40", "20", "19", "26", "55", "27"
   )
 )
 # alternatively, one could select by location using original search criteria...
@@ -619,7 +619,7 @@ saveRDS(counties, here("data", "derived", "public", "counties.RDS"))
 
 Optionally, load counties from the `counties.RDS` file saved with the repository
 
-```{r load-counties}
+```{r load-counties, eval = FALSE}
 counties <- readRDS(here("data", "derived", "public", "counties.RDS"))
 ```
 
@@ -664,9 +664,6 @@ Spatially join tevent tweets to counties with the following steps:
 8. Replace missing values with 0
 9. Calculate rate of spatial tweets per 10,000 people
 
-**Idea**: I could keep county-level tweet data for this part, because I'm
-summarizing by county anyway! It just doesn't make sense to map county-level
-tweet points.
 
 ```{r join-event-tweets-to-counties}
 tevent_sf <- tevent %>%
@@ -687,8 +684,6 @@ counties <- counties %>%
     event_tweets = replace_na(event_tweets, 0), 
     tweetrate = event_tweets / POP * 10000
   )
-  
-rm(tevent_by_county)
 ```
 
 Spatially join tdcontrol tweets to counties and calculate normalized tweet 
