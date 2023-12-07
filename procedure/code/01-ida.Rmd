@@ -434,6 +434,7 @@ tevent <- readRDS(here("data", "derived", "private", "tevent_all.RDS"))
 tdcontrol <- readRDS(here("data", "derived", "private", "tdcontrol.RDS"))
 ```
 
+
 # Temporal Analysis
 
 Create a temporal data frame and graph it
@@ -602,13 +603,14 @@ look up fips codes here:
 https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code 
 
 ```{r save-counties}
-counties <- filter(
-  counties,
-  STATEFP %in% c(
+states <- c(
     "54", "51", "50", "47", "45", "44", "42", "39", "37", "36", "05", "01",
     "34", "33", "29", "28", "25", "24", "23", "22", "21", "18", "17", "13",
-    "12", "11", "10", "09", "48", "40", "20", "19", "26", "55", "27"
-  )
+    "12", "11", "10", "09", "48", "40", "20", "19", "26", "55", "27")
+
+counties <- filter(
+  counties,
+  STATEFP %in% states
 )
 # alternatively, one could select by location using original search criteria...
 
@@ -621,6 +623,65 @@ Optionally, load counties from the `counties.RDS` file saved with the repository
 
 ```{r load-counties, eval = FALSE}
 counties <- readRDS(here("data", "derived", "public", "counties.RDS"))
+```
+
+## Baseline Census Data: Planned Deviation
+
+### Census data for geographic region (counties in geographic region)
+will move this to the pre-processing section but need to put this after counties and states for now
+```{r}
+# center of buffer
+center_lat <- 36
+center_lon <- -87
+
+# Create a buffer around the coordinates (using sf package)
+center_point <- st_point(c(center_lon, center_lat))
+buffer <- st_buffer(center_point, dist = 1609.34 * 1000)  # 1609.34 meters in a mile
+
+# Replace "YOUR_API_KEY" with the actual API key you obtained
+api_key <- "b5840eb5af9044fef5f4bed8cb0d7420e9a6462d"
+
+# initialize variables vector with single digits that need leading zero
+census_vars <- c("B01001_007", "B01001_008", "B01001_009")
+
+for (i in 10:49) {
+  varname <- paste("B01001_0",as.character(i),sep="")
+  census_vars <- c(census_vars, varname)
+}
+# print(census_vars)
+
+# using tidycensus
+acs_data <- get_acs(geography = "county",
+                    year = 2021,
+                    variables = census_vars,
+                    states = states,
+                    survey = "acs5")
+
+# pivot so each variable is a column
+acs_data_wide <- acs_data %>% 
+  pivot_wider(names_from = variable,
+              values_from = c(estimate, moe))
+
+# could save raw census data here
+
+# aggregate by Twitter age groups
+county_demog <- acs_data_wide %>% 
+  select(GEOID, NAME) %>% 
+  mutate(male_18_29 = rowSums(acs_data_wide[3:7]),
+         male_30_49 = rowSums(acs_data_wide[8:11]),
+         male_50_64 = rowSums(acs_data_wide[12:15]),
+         male_65_plus = rowSums(acs_data_wide[16:21]),
+         female_18_29 = rowSums(acs_data_wide[27:31]),
+         female_30_49 = rowSums(acs_data_wide[32:35]),
+         female_50_64 = rowSums(acs_data_wide[36:39]),
+         female_65_plus = rowSums(acs_data_wide[40:45])
+         )
+
+# calculate number of Twitter users
+# twitter_demog <- county_demog %>% 
+#   mutate()
+
+
 ```
 
 ## Map Population Density and Tweet Points
@@ -647,7 +708,7 @@ ggplot() +
     axis.title.y = element_blank()
   ) +
   xlim(-96, -67) +
-  ylim(24, 47)
+  ylim(24, 47) 
 ```
 
 ## Join Tweets to Counties
