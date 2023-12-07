@@ -1,1 +1,12 @@
 path,name,metadata,description
+data/raw/private,tevent_raw.RDS,,"Twitter query ""Ida OR hurricane"" on 9/2/21 in a 1000mi radius of 36, -87"
+data/raw/private,tevent_raw2.RDS,,"Twitter query ""Ida OR hurricane"" on 9/5/21  in a 1000mi radius of 36, -87"
+data/raw/private,tevent_raw3.RDS,,"Twitter query ""Ida OR hurricane"" on 9/10/21  in a 1000mi radius of 36, -87"
+data/raw/private,tevent_raw4.RDS,,"Twitter query ""Ida OR hurricane OR electrivcity OR recovery OR outage"" on 9/10/21  in a 1000mi radius of 36, -87"
+data/raw/public,teventids.txt,,status_ids for tevent_raw.RDS
+data/raw/public,teventids2.txt,,status_ids for tevent_raw2.RDS
+data/raw/public,teventids3.txt,,status_ids for tevent_raw3.RDS
+data/raw/public,teventids4.txt,,status_ids for tevent_raw4.RDS
+data/derived/private,tevent_all.RDS,,all tevent_raw files combined with no duplicates and lat/long columns
+data/derived/public,counties.RDS,,all counties within Twitter query radius
+data/derived/public,counties_tweet_counts.RDS,,counties with added columns of number of tweets per county and normalized number of tweets per county

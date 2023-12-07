@@ -429,7 +429,7 @@ saveRDS(tdcontrol, here("data", "derived", "private", "tdcontrol.RDS"))
 Optionally,
 Load processed twitter data
 
-```{r load-processed-tweets, eval = FALSE }
+```{r load-processed-tweets}
 tevent <- readRDS(here("data", "derived", "private", "tevent_all.RDS"))
 tdcontrol <- readRDS(here("data", "derived", "private", "tdcontrol.RDS"))
 ```
