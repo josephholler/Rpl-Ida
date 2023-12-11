@@ -21,6 +21,20 @@ https://www.earthdatascience.org/courses/earth-analytics/get-data-using-apis/use
 - Michael Minn's *Basic Spatial Point Pattern Analysis in R* tutorial available 
 at: http://michaelminn.net/tutorials/r-point-analysis/
 
+# Abstract
+
+Write a brief abstract about your research project.
+
+If the project is a reproduction or replication study, include a declaration of the study type with a full reference to the original study.
+For example:
+
+This study is a *replication* of:
+
+> citation to prior study
+
+A graphical abstract of the study could also be included as an image here.
+
+
 ## Set up environment
 
 Load the R project saved in the root directory of this repository, so that the
@@ -231,6 +245,24 @@ write.table(tevent_raw4$status_id,
 saveRDS(tevent_raw4, here("data", "raw", "private", "tevent_raw4.RDS") )
 ```
 
+## Visualize geographic region of search queries
+```{r}
+# template from hotspot results 
+ggplot() +
+  geom_sf(data = counties, aes(fill = sig), color = "white", lwd = 0.1) +
+  scale_fill_manual(
+    values = c("#0000FF80", "#8080FF80", "#FFFFFF80", "#FF808080", "#FF000080"),
+    labels = c("low", "", "insignificant", "", "high"),
+    aesthetics = "fill"
+  ) +
+  guides(fill = guide_legend(title = "Hot Spots")) +
+  labs(title = "Clusters of Hurricane event Twitter Activity") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  )
+```
 
 
 ## Search for generic tweets after hurricane season
@@ -332,7 +364,6 @@ tevent_raw <- readRDS(here("data", "raw", "private", "tevent_raw.RDS"))
 tevent_raw2 <- readRDS(here("data", "raw", "private", "tevent_raw2.RDS"))
 tevent_raw3 <- readRDS(here("data", "raw", "private", "tevent_raw3.RDS"))
 tevent_raw4 <- readRDS(here("data", "raw", "private", "tevent_raw4.RDS"))
-#tdcontrol_raw <- readRDS(here("data", "raw", "private", "tdcontrol_raw.RDS")) # need different baseline
 ```
 
 ## Process geographic data in tweets 
@@ -431,7 +462,6 @@ Load processed twitter data
 
 ```{r load-processed-tweets}
 tevent <- readRDS(here("data", "derived", "private", "tevent_all.RDS"))
-tdcontrol <- readRDS(here("data", "derived", "private", "tdcontrol.RDS"))
 ```
 
 
@@ -630,25 +660,17 @@ counties <- readRDS(here("data", "derived", "public", "counties.RDS"))
 ### Census data for geographic region (counties in geographic region)
 will move this to the pre-processing section but need to put this after counties and states for now
 ```{r}
-# center of buffer
-center_lat <- 36
-center_lon <- -87
-
-# Create a buffer around the coordinates (using sf package)
-center_point <- st_point(c(center_lon, center_lat))
-buffer <- st_buffer(center_point, dist = 1609.34 * 1000)  # 1609.34 meters in a mile
 
 # Replace "YOUR_API_KEY" with the actual API key you obtained
 api_key <- "b5840eb5af9044fef5f4bed8cb0d7420e9a6462d"
 
 # initialize variables vector with single digits that need leading zero
-census_vars <- c("B01001_007", "B01001_008", "B01001_009")
+census_vars <- c("B01001_001","B01001_007", "B01001_008", "B01001_009")
 
 for (i in 10:49) {
   varname <- paste("B01001_0",as.character(i),sep="")
   census_vars <- c(census_vars, varname)
 }
-# print(census_vars)
 
 # using tidycensus
 acs_data <- get_acs(geography = "county",
@@ -666,20 +688,23 @@ acs_data_wide <- acs_data %>%
 
 # aggregate by Twitter age groups
 county_demog <- acs_data_wide %>% 
-  select(GEOID, NAME) %>% 
-  mutate(male_18_29 = rowSums(acs_data_wide[3:7]),
-         male_30_49 = rowSums(acs_data_wide[8:11]),
-         male_50_64 = rowSums(acs_data_wide[12:15]),
-         male_65_plus = rowSums(acs_data_wide[16:21]),
-         female_18_29 = rowSums(acs_data_wide[27:31]),
-         female_30_49 = rowSums(acs_data_wide[32:35]),
-         female_50_64 = rowSums(acs_data_wide[36:39]),
-         female_65_plus = rowSums(acs_data_wide[40:45])
-         )
+  rename(total_pop = estimate_B01001_001) %>% 
+  select(GEOID, NAME, total_pop) %>% 
+  # mutate(
+  #        male_18_29 = rowSums(acs_data_wide[3:7]),
+  #        male_30_49 = rowSums(acs_data_wide[8:11]),
+  #        male_50_64 = rowSums(acs_data_wide[12:15]),
+  #        male_65_plus = rowSums(acs_data_wide[16:21]),
+  #        female_18_29 = rowSums(acs_data_wide[27:31]),
+  #        female_30_49 = rowSums(acs_data_wide[32:35]),
+  #        female_50_64 = rowSums(acs_data_wide[36:39]),
+  #        female_65_plus = rowSums(acs_data_wide[40:45]),
+  #        
+          # )
+  mutate(twitter_pop = total_pop/10000) # approx. number of twitter users
 
-# calculate number of Twitter users
-# twitter_demog <- county_demog %>% 
-#   mutate()
+# join population data to counties data set
+
 
 
 ```
@@ -741,36 +766,20 @@ tevent_by_county <- tevent_sf %>%
 
 counties <- counties %>%
   left_join(tevent_by_county, by = "GEOID") %>%
-  mutate(
-    event_tweets = replace_na(event_tweets, 0), 
-    tweetrate = event_tweets / POP * 10000
-  )
+  mutate(event_tweets = replace_na(event_tweets, 0),
+         twitter_pop = POP/10000,
+         tweetrate = event_tweets / twitter_pop)
+
 ```
 
-Spatially join tdcontrol tweets to counties and calculate normalized tweet 
-difference index: `(event - control) / (event + control)`
 
-```{r join-control-tweets-to-counties}
-# Repeat the workflow above for tweets in tdcontrol
-
-tdcontrol_by_county <- tdcontrol %>%
-  st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
-  st_transform(4269) %>%
-  st_join(select(counties, GEOID)) %>%
-  st_drop_geometry() %>%
-  group_by(GEOID) %>%
-  summarise(ctrl_tweets = n())
-
+Calculate normalized tweet difference index: `(event - control) / (event + control)`
+```{r}
 counties <- counties %>%
-  left_join(tdcontrol_by_county, by = "GEOID") %>%
-  mutate(ctrl_tweets = replace_na(ctrl_tweets, 0))
-
-counties <- counties %>%
-  mutate(ntdi = (event_tweets - tdcontrol) / (event_tweets + tdcontrol)) %>% 
+  mutate(ntdi = (event_tweets - twitter_pop)/(event_tweets + twitter_pop)) %>% 
   mutate(ntdi = replace_na(ntdi, 0)) # replace NULLs with 0's
-
-rm(tdcontrol_by_county)
 ```
+
 
 Save counties as `counties_tweet_counts.RDS`
 
@@ -875,3 +884,52 @@ ggplot() +
     axis.title.y = element_blank()
   )
 ```
+
+```{r}
+november <- readRDS(here("data", "derived", "private", "november.RDS"))
+
+# double check november procedure
+
+nov_by_county <- november %>%
+  st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(4269) %>%
+  st_join(select(counties, GEOID)) %>%
+  st_drop_geometry() %>%
+  group_by(GEOID) %>%
+  summarise(nov = n())
+
+counties <- counties %>%
+  left_join(nov_by_county, by = "GEOID") %>%
+  mutate(nov = replace_na(nov, 0),
+         tweetrate_nov = event_tweets / nov)
+
+counties <- counties %>%
+  mutate(ndti = (event_tweets - nov) / (event_tweets + nov)) %>% # normalized diff tweet index
+  mutate(ndti = replace_na(ndti, 0)) # replace NULLs with 0's
+
+```
+
+
+# Results
+
+Describe how results are to be presented.
+
+# Discussion
+
+- approximating Twitter users - dividing county population by 10000
+
+# Integrity Statement
+
+Include an integrity statement - The authors of this preregistration state that they completed this preregistration to the best of their knowledge and that no other preregistration exists pertaining to the same hypotheses and research.
+If a prior registration *does* exist, explain the rationale for revising the registration here.
+
+# Acknowledgements
+
+- `Funding Name`: name of funding for the project
+- `Funding Title`: title of project grant
+- `Award info URI`: web address for award information
+- `Award number`: award number
+
+This report is based upon the template for Reproducible and Replicable Research in Human-Environment and Geographical Sciences, DOI:[10.17605/OSF.IO/W29MQ](https://doi.org/10.17605/OSF.IO/W29MQ)
+
+# References
