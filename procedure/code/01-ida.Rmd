@@ -247,21 +247,22 @@ saveRDS(tevent_raw4, here("data", "raw", "private", "tevent_raw4.RDS") )
 
 ## Visualize geographic region of search queries
 ```{r}
+
+center <- data.frame(lon = -87, lat = 36)
+center_sf <- st_as_sf(center, coords = c("lon","lat"), crs = 4326)
+center_buff <- st_buffer(center_sf, 1609000)
+
 # template from hotspot results 
 ggplot() +
-  geom_sf(data = counties, aes(fill = sig), color = "white", lwd = 0.1) +
-  scale_fill_manual(
-    values = c("#0000FF80", "#8080FF80", "#FFFFFF80", "#FF808080", "#FF000080"),
-    labels = c("low", "", "insignificant", "", "high"),
-    aesthetics = "fill"
-  ) +
-  guides(fill = guide_legend(title = "Hot Spots")) +
-  labs(title = "Clusters of Hurricane event Twitter Activity") +
+  geom_sf(data = counties, color = "black", fill="white", lwd = 0.1) +
+  geom_sf(data = center_buff, color = "red", fill = NA) +
+  labs(title = "Twitter Search Query Region") +
   theme(
     plot.title = element_text(hjust = 0.5),
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
-  )
+  ) +
+  theme_minimal()
 ```
 
 
@@ -419,7 +420,7 @@ count(tevent, place_type)
 
 Convert geographic information to `lat`,`lng` for control tweets
 
-```{r control-lat-long}
+```{r control-lat-long, eval = FALSE}
 # convert geographic information for control into lat,lng coordinates
 tdcontrol <- tdcontrol_raw %>% 
   lat_lng(coords = c("coords_coords")) %>% 
@@ -437,7 +438,7 @@ Save the full tweet data to `data\derived\private` folder as RDS files.
 Full Tweet data cannot be shared with the public, therefore it is stored in
 a folder ignored by Git.
 
-```{r save-processed-tweets}
+```{r save-processed-tweets, eval = FALSE}
 # save event data
 write.table(tevent$status_id,
   here("data", "derived", "public", "teventids.txt"),
@@ -664,48 +665,48 @@ will move this to the pre-processing section but need to put this after counties
 # Replace "YOUR_API_KEY" with the actual API key you obtained
 api_key <- "b5840eb5af9044fef5f4bed8cb0d7420e9a6462d"
 
-# initialize variables vector with single digits that need leading zero
-census_vars <- c("B01001_001","B01001_007", "B01001_008", "B01001_009")
-
-for (i in 10:49) {
-  varname <- paste("B01001_0",as.character(i),sep="")
-  census_vars <- c(census_vars, varname)
-}
-
-# using tidycensus
-acs_data <- get_acs(geography = "county",
-                    year = 2021,
-                    variables = census_vars,
-                    states = states,
-                    survey = "acs5")
-
-# pivot so each variable is a column
-acs_data_wide <- acs_data %>% 
-  pivot_wider(names_from = variable,
-              values_from = c(estimate, moe))
-
-# could save raw census data here
-
-# aggregate by Twitter age groups
-county_demog <- acs_data_wide %>% 
-  rename(total_pop = estimate_B01001_001) %>% 
-  select(GEOID, NAME, total_pop) %>% 
-  # mutate(
-  #        male_18_29 = rowSums(acs_data_wide[3:7]),
-  #        male_30_49 = rowSums(acs_data_wide[8:11]),
-  #        male_50_64 = rowSums(acs_data_wide[12:15]),
-  #        male_65_plus = rowSums(acs_data_wide[16:21]),
-  #        female_18_29 = rowSums(acs_data_wide[27:31]),
-  #        female_30_49 = rowSums(acs_data_wide[32:35]),
-  #        female_50_64 = rowSums(acs_data_wide[36:39]),
-  #        female_65_plus = rowSums(acs_data_wide[40:45]),
-  #        
-          # )
-  mutate(twitter_pop = total_pop/10000) # approx. number of twitter users
-
-# join population data to counties data set
-
-
+# # initialize variables vector with single digits that need leading zero
+# census_vars <- c("B01001_001","B01001_007", "B01001_008", "B01001_009")
+# 
+# for (i in 10:49) {
+#   varname <- paste("B01001_0",as.character(i),sep="")
+#   census_vars <- c(census_vars, varname)
+# }
+# 
+# # using tidycensus
+# acs_data <- get_acs(geography = "county",
+#                     year = 2021,
+#                     variables = census_vars,
+#                     states = states,
+#                     survey = "acs5")
+# 
+# # pivot so each variable is a column
+# acs_data_wide <- acs_data %>% 
+#   pivot_wider(names_from = variable,
+#               values_from = c(estimate, moe))
+# 
+# # could save raw census data here
+# 
+# # aggregate by Twitter age groups
+# county_demog <- acs_data_wide %>% 
+#   rename(total_pop = estimate_B01001_001) %>% 
+#   select(GEOID, NAME, total_pop) %>% 
+#   # mutate(
+#   #        male_18_29 = rowSums(acs_data_wide[3:7]),
+#   #        male_30_49 = rowSums(acs_data_wide[8:11]),
+#   #        male_50_64 = rowSums(acs_data_wide[12:15]),
+#   #        male_65_plus = rowSums(acs_data_wide[16:21]),
+#   #        female_18_29 = rowSums(acs_data_wide[27:31]),
+#   #        female_30_49 = rowSums(acs_data_wide[32:35]),
+#   #        female_50_64 = rowSums(acs_data_wide[36:39]),
+#   #        female_65_plus = rowSums(acs_data_wide[40:45]),
+#   #        
+#           # )
+#   mutate(twitter_pop = total_pop/10000) # approx. number of twitter users
+# 
+# # join population data to counties data set
+# 
+# 
 
 ```
 
@@ -776,9 +777,10 @@ counties <- counties %>%
 Calculate normalized tweet difference index: `(event - control) / (event + control)`
 ```{r}
 counties <- counties %>%
-  mutate(ntdi = (event_tweets - twitter_pop)/(event_tweets + twitter_pop)) %>% 
-  mutate(ntdi = replace_na(ntdi, 0)) # replace NULLs with 0's
+  mutate(ndti = (event_tweets - twitter_pop)/(event_tweets + twitter_pop)) %>% 
+  mutate(ndti = replace_na(ndti, 0)) # replace NULLs with 0's
 ```
+
 
 
 Save counties as `counties_tweet_counts.RDS`
@@ -792,6 +794,62 @@ Optionally, begin here by loading counties with Twitter data
 
 ```{r load-counties-with-twitter}
 counties <- readRDS(here("data", "derived", "public", "counties_tweet_counts.RDS"))
+```
+
+### Plot NDTI using Census baseline 
+```{r map ndti census}
+ggplot() +
+  geom_sf(data = counties, 
+    aes(fill = cut_interval(ndti, 5)), color = "grey", lwd=0.01) +
+  scale_fill_brewer(palette = "GnBu") +
+  guides(fill = guide_legend(title = "Normalized Difference Tweet Index")) +
+  labs(title = "Hurricane Ida Twitter Activity") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  xlim(-96, -67) +
+  ylim(24, 47)
+```
+```{r}
+november <- readRDS(here("data", "derived", "private", "november.RDS"))
+
+# double check november procedure
+
+nov_by_county <- november %>%
+  st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
+  st_transform(4269) %>%
+  st_join(select(counties, GEOID)) %>%
+  st_drop_geometry() %>%
+  group_by(GEOID) %>%
+  summarise(nov = n())
+
+counties <- counties %>%
+  left_join(nov_by_county, by = "GEOID") %>%
+  mutate(nov = replace_na(nov, 0))
+
+counties <- counties %>%
+  mutate(ndti_nov = (event_tweets - nov) / (event_tweets + nov)) %>% # normalized diff tweet index
+  mutate(ndti_nov = replace_na(ndti_nov, 0)) # replace NULLs with 0's
+
+```
+
+### Plot NDTI using November baseline
+```{r map ndti november}
+ggplot() +
+  geom_sf(data = counties, 
+    aes(fill = cut_interval(ndti_nov, 5)), color = "grey", lwd=0.01) +
+  scale_fill_brewer(palette = "GnBu") +
+  guides(fill = guide_legend(title = "Normalized Difference Tweet Index")) +
+  labs(title = "Hurricane Ida Twitter Activity") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  xlim(-96, -67) +
+  ylim(24, 47)
 ```
 
 ## Spatial Cluster Analysis
@@ -885,34 +943,12 @@ ggplot() +
   )
 ```
 
-```{r}
-november <- readRDS(here("data", "derived", "private", "november.RDS"))
-
-# double check november procedure
-
-nov_by_county <- november %>%
-  st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
-  st_transform(4269) %>%
-  st_join(select(counties, GEOID)) %>%
-  st_drop_geometry() %>%
-  group_by(GEOID) %>%
-  summarise(nov = n())
-
-counties <- counties %>%
-  left_join(nov_by_county, by = "GEOID") %>%
-  mutate(nov = replace_na(nov, 0),
-         tweetrate_nov = event_tweets / nov)
-
-counties <- counties %>%
-  mutate(ndti = (event_tweets - nov) / (event_tweets + nov)) %>% # normalized diff tweet index
-  mutate(ndti = replace_na(ndti, 0)) # replace NULLs with 0's
-
-```
-
 
 # Results
 
 Describe how results are to be presented.
+
+- comparing census baseline vs. november baseline - compare to hotspot map
 
 # Discussion
 
