@@ -1,7 +1,7 @@
 ---
 title: "Hurricane Ida Outage on Twitter"
-author: "Joseph Holler"
-date: "9/1/2021"
+author: "Joseph Holler, Elise Chan"
+date: "12/15/2023"
 output: html_document
 ---
 
@@ -23,16 +23,7 @@ at: http://michaelminn.net/tutorials/r-point-analysis/
 
 # Abstract
 
-Write a brief abstract about your research project.
-
-If the project is a reproduction or replication study, include a declaration of the study type with a full reference to the original study.
-For example:
-
-This study is a *replication* of:
-
-> citation to prior study
-
-A graphical abstract of the study could also be included as an image here.
+This study is a replication of Professor Holler's study of Twitter activity during Hurricane Dorian. 
 
 
 ## Set up environment
@@ -43,7 +34,6 @@ working directory is the root directory of the repository.
 ```{r setup, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# install r version from 9-10-2021
 if(!require(groundhog)){
   install.packages("groundhog")
   require(groundhog)
@@ -54,6 +44,7 @@ if(!require(here)){
   require(here)
 }
 
+# install r version from 9-10-2021
 groundhog.day <- "2021-09-10"
 set.groundhog.folder(here("data", "scratch", "groundhog"))
 
@@ -65,10 +56,6 @@ packages <- c(
   "tidycensus", "sf", "spdep"
 )
 
-
-# additional packages: test which are still needed:
-# "maps", "tm", "RColorBrewer", "rccmisc",
-
 # load and install required packages
 package_check <- lapply(
   packages,
@@ -79,20 +66,16 @@ package_check <- lapply(
     }
   }
 )
-```
 
-```{r}
-# installing a previous version of rtweet
-# in 2021, would have been version 0.7.0. In Nov 2023, we're on 1.1.0
 
-# Install the 'remotes' package if you haven't already
 install.packages("remotes")
-
 # Load the 'remotes' package
 library(remotes)
 
-# Install a specific version of 'rtweet'
-#detach("package:rtweet", unload = TRUE)
+# install a previous version of rtweet
+# in 2021, would have been version 0.7.0. 
+
+# detach("package:rtweet", unload = TRUE) # run this line if a current version of rtweet is already installed
 library(devtools)
 install_version("rtweet", version = "0.7.0")
 library(rtweet)
@@ -104,8 +87,33 @@ library(rtweet)
 # )
 ```
 
-## Set up Twitter Application
+# Load Data from Twitter
 
+**Note:** Twitter (now X) no longer offers a free API for pulling large searvch queries of tweets. For this study, I used tweets that were already downloaded from Twitter.
+The following code will no longer work but remains in the code for transparency of the data collection methods.
+
+## Visualize geographic region of search queries
+The search queries for the Hurricane Ida tweets were limited to a geographic region of a 1000mile radius around 36,-87. 
+```{r query-region}
+counties <- readRDS(here("data", "derived", "public", "counties.RDS"))
+
+center <- data.frame(lon = -87, lat = 36)
+center_sf <- st_as_sf(center, coords = c("lon","lat"), crs = 4326)
+center_buff <- st_buffer(center_sf, 1609000)
+
+ggplot() +
+  geom_sf(data = counties, color = "white", fill="gray", lwd = 0.05) +
+  geom_sf(data = center_buff, color = "red", fill = NA) +
+  labs(title = "Twitter Search Query Region") +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  theme_minimal()
+```
+
+## Set up Twitter API
 You will need Twitter Developer API access to run this analysis:
 See https://cran.r-project.org/web/packages/rtweet/vignettes/auth.html for
 instructions.
@@ -156,17 +164,14 @@ twitter_token <- create_token(
 )
 ```
 
-# Pre-processing
+## Pre-processing
 
 - Acquire Twitter data for analysis
 - Filter Twitter data for good geographic information and convert to Lat/Long
 coordinates
 
-## Search for Hurricane event tweets
-
-get tweets for hurricane Ida, searched on `02-Sept-2021`
-**Warning**: this code will no longer result in the same data! 
-It is here for reference or replication work only.
+### Search for Hurricane event tweets
+Get tweets for Hurricane Ida, searched on `02-Sept-2021`
 
 ```{r search-event, eval = FALSE}
 tevent_raw <- search_tweets("ida OR hurricane",
@@ -185,8 +190,8 @@ write.table(tevent_raw$status_id,
 saveRDS(tevent_raw, here("data", "raw", "private", "tevent_raw.RDS") )
 ```
 
-## Second search for more temporal coverage
-get tweets for hurricane Ida, searched on `05-Sept-2021`
+### Second search for more temporal coverage
+Get tweets for Hurricane Ida, searched on `05-Sept-2021`
 
 ```{r search-event-again, eval = FALSE}
 tevent_raw2 <- search_tweets("ida OR hurricane",
@@ -205,8 +210,8 @@ write.table(tevent_raw2$status_id,
 saveRDS(tevent_raw2, here("data", "raw", "private", "tevent_raw2.RDS") )
 ```
 
-## Third search for more temporal coverage
-get tweets for hurricane Ida, searched on `10-Sept-2021`
+### Third search for more temporal coverage
+Get tweets for Hurricane Ida, searched on `10-Sept-2021`
 
 ```{r search-event-again, eval = FALSE}
 tevent_raw3 <- search_tweets("ida OR hurricane",
@@ -225,8 +230,8 @@ write.table(tevent_raw3$status_id,
 saveRDS(tevent_raw3, here("data", "raw", "private", "tevent_raw3.RDS") )
 ```
 
-## Fourth search for different thematic coverage
-get tweets for hurricane Ida, searched on `10-Sept-2021`
+### Fourth search for different thematic coverage
+Get tweets for Hurricane Ida, searched on `10-Sept-2021`
 
 ```{r search-event-again, eval = FALSE}
 tevent_raw4 <- search_tweets("ida OR flood OR electricity OR recovery OR outage",
@@ -245,28 +250,12 @@ write.table(tevent_raw4$status_id,
 saveRDS(tevent_raw4, here("data", "raw", "private", "tevent_raw4.RDS") )
 ```
 
-## Visualize geographic region of search queries
-```{r}
-
-center <- data.frame(lon = -87, lat = 36)
-center_sf <- st_as_sf(center, coords = c("lon","lat"), crs = 4326)
-center_buff <- st_buffer(center_sf, 1609000)
-
-# template from hotspot results 
-ggplot() +
-  geom_sf(data = counties, color = "black", fill="white", lwd = 0.1) +
-  geom_sf(data = center_buff, color = "red", fill = NA) +
-  labs(title = "Twitter Search Query Region") +
-  theme(
-    plot.title = element_text(hjust = 0.5),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank()
-  ) +
-  theme_minimal()
-```
 
 
-## Search for generic tweets after hurricane season
+### Search for generic tweets after hurricane season
+
+**Note:** Instead of using generic tweets to normalize the hurricane tweets, I use Census population data.
+
 
 get tweets without any text filter for the same geographic region in tdcontrol, 
 searched on tdcontrol 19, 2019
@@ -290,7 +279,7 @@ write.table(tdcontrol_raw$status_id,
 )
 ```
 
-## Rehydrate the twitter data
+### Rehydrate the twitter data
 
 Twitter does not permit redistribution of Twitter data, with the exception of 
 tweet status ids. 
@@ -353,13 +342,6 @@ tdcontrol_raw <- rehydratoR(twitter_token$app$key, twitter_token$app$secret,
 
 ## Load the original search results
 
-Students in the GEOG 323 Open Source GIScience course may download the original
-search results from the private course data repository: 
-...
-
-Save the two `.RDS` files to the `data/raw/private` folder and then load the
-data with the code block below.
-
 ```{r load-original}
 tevent_raw <- readRDS(here("data", "raw", "private", "tevent_raw.RDS"))
 tevent_raw2 <- readRDS(here("data", "raw", "private", "tevent_raw2.RDS"))
@@ -368,16 +350,6 @@ tevent_raw4 <- readRDS(here("data", "raw", "private", "tevent_raw4.RDS"))
 ```
 
 ## Process geographic data in tweets 
-
-reference for lat_lng function: https://rtweet.info/reference/lat_lng.html
-adds a lat and long field to the data frame, picked out of the fields
-that you indicate in the c() list
-sample function: lat_lng(x, coords = c("coords_coords", "bbox_coords"))
-
-list and count unique place types
-NA results included based on profile locations, not geotagging / geocoding.
-If you have these, it indicates that you exhausted the more precise tweets 
-in your search parameters and are including locations based on user profiles
 
 ### Combine searches
 
@@ -419,7 +391,7 @@ count(tevent, place_type)
 ```
 
 Convert geographic information to `lat`,`lng` for control tweets
-
+**Warning:** this code could be run if a generic tweet search query could be used. This data was not available for this iteration of this study.
 ```{r control-lat-long, eval = FALSE}
 # convert geographic information for control into lat,lng coordinates
 tdcontrol <- tdcontrol_raw %>% 
@@ -472,7 +444,13 @@ Create a temporal data frame and graph it
 
 ```{r temporal}
 tevent_tweets_by_hour <- ts_data(tevent, by = "hours")
-ts_plot(tevent, by = "hours")
+
+ggplot()+
+  geom_line(data=tevent_tweets_by_hour, aes(x=time,y=n), color="black") +
+  xlab("Time") +
+  ylab("Number of tweets") +
+  labs(title="Hurricane Ida Tweets per Hour (2021)") +
+  theme_minimal()
 ```
 
 # Network Analysis
@@ -569,7 +547,8 @@ tevent_words %>%
     x = "Count",
     y = "Unique words",
     title = "Count of unique words found in tweets"
-  )
+  ) +
+  theme_minimal()
 ```
 
 ## Analyze and graph word assoctiation
@@ -592,7 +571,7 @@ tevent_word_pairs %>%
   geom_node_point(color = "darkslategray4", size = 3) +
   geom_node_text(aes(label = name), vjust = 1.8, size = 3) +
   labs(
-    title = "Word Network of Tweets during Hurricane event",
+    title = "Word Network of Tweets during Hurricane Ida",
     x = "", y = ""
   ) +
   theme(
@@ -633,6 +612,8 @@ select only the states you want, with FIPS state codes
 look up fips codes here: 
 https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code 
 
+**Note:** the `counties` dataset generated by the following code chunk was loaded for the tweet geographic region visualization.
+
 ```{r save-counties}
 states <- c(
     "54", "51", "50", "47", "45", "44", "42", "39", "37", "36", "05", "01",
@@ -643,7 +624,6 @@ counties <- filter(
   counties,
   STATEFP %in% states
 )
-# alternatively, one could select by location using original search criteria...
 
 saveRDS(counties, here("data", "derived", "public", "counties.RDS"))
 ```
@@ -656,66 +636,8 @@ Optionally, load counties from the `counties.RDS` file saved with the repository
 counties <- readRDS(here("data", "derived", "public", "counties.RDS"))
 ```
 
-## Baseline Census Data: Planned Deviation
-
-### Census data for geographic region (counties in geographic region)
-will move this to the pre-processing section but need to put this after counties and states for now
-```{r}
-
-# Replace "YOUR_API_KEY" with the actual API key you obtained
-api_key <- "b5840eb5af9044fef5f4bed8cb0d7420e9a6462d"
-
-# # initialize variables vector with single digits that need leading zero
-# census_vars <- c("B01001_001","B01001_007", "B01001_008", "B01001_009")
-# 
-# for (i in 10:49) {
-#   varname <- paste("B01001_0",as.character(i),sep="")
-#   census_vars <- c(census_vars, varname)
-# }
-# 
-# # using tidycensus
-# acs_data <- get_acs(geography = "county",
-#                     year = 2021,
-#                     variables = census_vars,
-#                     states = states,
-#                     survey = "acs5")
-# 
-# # pivot so each variable is a column
-# acs_data_wide <- acs_data %>% 
-#   pivot_wider(names_from = variable,
-#               values_from = c(estimate, moe))
-# 
-# # could save raw census data here
-# 
-# # aggregate by Twitter age groups
-# county_demog <- acs_data_wide %>% 
-#   rename(total_pop = estimate_B01001_001) %>% 
-#   select(GEOID, NAME, total_pop) %>% 
-#   # mutate(
-#   #        male_18_29 = rowSums(acs_data_wide[3:7]),
-#   #        male_30_49 = rowSums(acs_data_wide[8:11]),
-#   #        male_50_64 = rowSums(acs_data_wide[12:15]),
-#   #        male_65_plus = rowSums(acs_data_wide[16:21]),
-#   #        female_18_29 = rowSums(acs_data_wide[27:31]),
-#   #        female_30_49 = rowSums(acs_data_wide[32:35]),
-#   #        female_50_64 = rowSums(acs_data_wide[36:39]),
-#   #        female_65_plus = rowSums(acs_data_wide[40:45]),
-#   #        
-#           # )
-#   mutate(twitter_pop = total_pop/10000) # approx. number of twitter users
-# 
-# # join population data to counties data set
-# 
-# 
-
-```
 
 ## Map Population Density and Tweet Points
-
-map results with GGPlot
-note: cut_interval is an equal interval classification function, while 
-cut_number is a quantile / equal count function
-you can change the colors, titles, and transparency of points
 
 ```{r map-tweet-points}
 ggplot() +
@@ -728,13 +650,15 @@ ggplot() +
     colour = "purple", alpha = 0.1, size = 1
   ) +
   labs(title = "Tweet Locations During Hurricane Ida") +
+  theme_minimal() +
   theme(
     plot.title = element_text(hjust = 0.5),
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
-  ) +
-  xlim(-96, -67) +
-  ylim(24, 47) 
+  )
+  # xlim(-96, -67) +
+  # ylim(24, 47)
+
 ```
 
 ## Join Tweets to Counties
@@ -782,40 +706,42 @@ counties <- counties %>%
 ```
 
 
-
 Save counties as `counties_tweet_counts.RDS`
-
 ```{r save-counties-tweet-counts}
 # save counties geographic data with derived tweet rates
 saveRDS(counties, here("data", "derived", "public", "counties_tweet_counts.RDS"))
 ```
 
 Optionally, begin here by loading counties with Twitter data
-
-```{r load-counties-with-twitter}
+```{r load-counties-with-twitter, eval = FALSE}
 counties <- readRDS(here("data", "derived", "public", "counties_tweet_counts.RDS"))
 ```
 
+## Plot NDTI
 ### Plot NDTI using Census baseline 
 ```{r map ndti census}
 ggplot() +
   geom_sf(data = counties, 
-    aes(fill = cut_interval(ndti, 5)), color = "grey", lwd=0.01) +
+    aes(fill = cut_width(ndti, width = 0.4)), 
+    color = "grey", lwd=0.01) +
   scale_fill_brewer(palette = "GnBu") +
   guides(fill = guide_legend(title = "Normalized Difference Tweet Index")) +
-  labs(title = "Hurricane Ida Twitter Activity") +
+  labs(title = "Hurricane Ida Twitter Activity",
+       subtitle = "Using population / 10,000 as control") +
   theme(
     plot.title = element_text(hjust = 0.5),
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
   ) +
   xlim(-96, -67) +
-  ylim(24, 47)
+  ylim(24, 47) +
+  theme_minimal()
 ```
+
+### Plot NDTI using November baseline
+For the original Hurricane Dorian study, a query of generic tweets was searched in November 2019 and used to normalize the tweets. I use this dataset to calculate the NDTI to see how different it is from the Census population results. 
 ```{r}
 november <- readRDS(here("data", "derived", "private", "november.RDS"))
-
-# double check november procedure
 
 nov_by_county <- november %>%
   st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
@@ -835,26 +761,31 @@ counties <- counties %>%
 
 ```
 
-### Plot NDTI using November baseline
-```{r map ndti november}
+
+```{r map ndti-november}
 ggplot() +
   geom_sf(data = counties, 
-    aes(fill = cut_interval(ndti_nov, 5)), color = "grey", lwd=0.01) +
+    aes(fill = cut_width(ndti_nov, width = 0.4)), 
+        color = "grey", lwd=0.01) +
   scale_fill_brewer(palette = "GnBu") +
   guides(fill = guide_legend(title = "Normalized Difference Tweet Index")) +
-  labs(title = "Hurricane Ida Twitter Activity") +
+  labs(title = "Hurricane Ida Twitter Activity",
+       subtitle = "Using tweets in November 2019 as control") +
   theme(
     plot.title = element_text(hjust = 0.5),
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
   ) +
   xlim(-96, -67) +
-  ylim(24, 47)
+  ylim(24, 47) +
+  theme_minimal()
+
+# where are the NA values coming from
 ```
 
-## Spatial Cluster Analysis
+# Spatial Cluster Analysis
 
-### Create Spatial Weight Matrix
+## Create Spatial Weight Matrix
 
 Use 110km Euclidean distance and include self in the weight matrix
 
@@ -935,12 +866,14 @@ ggplot() +
     aesthetics = "fill"
   ) +
   guides(fill = guide_legend(title = "Hot Spots")) +
-  labs(title = "Clusters of Hurricane event Twitter Activity") +
+  labs(title = "Clusters of Hurricane Ida Twitter Activity") +
   theme(
     plot.title = element_text(hjust = 0.5),
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
-  )
+  ) +
+  xlim(-96, -67) +
+  ylim(24, 47)
 ```
 
 
@@ -953,6 +886,11 @@ Describe how results are to be presented.
 # Discussion
 
 - approximating Twitter users - dividing county population by 10000
+- compare to november
+
+- look at extent, are hotspots in places not affected by hurricane signficant?
+
+# Conclusion
 
 # Integrity Statement
 
