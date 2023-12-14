@@ -89,7 +89,7 @@ library(rtweet)
 
 # Load Data from Twitter
 
-**Note:** Twitter (now X) no longer offers a free API for pulling large searvch queries of tweets. For this study, I used tweets that were already downloaded from Twitter.
+**Note:** Twitter (now X) no longer offers a free API for pulling large search queries of tweets. For this study, I used tweets that were already downloaded from Twitter.
 The following code will no longer work but remains in the code for transparency of the data collection methods.
 
 ## Visualize geographic region of search queries
@@ -98,12 +98,12 @@ The search queries for the Hurricane Ida tweets were limited to a geographic reg
 counties <- readRDS(here("data", "derived", "public", "counties.RDS"))
 
 center <- data.frame(lon = -87, lat = 36)
-center_sf <- st_as_sf(center, coords = c("lon","lat"), crs = 4326)
-center_buff <- st_buffer(center_sf, 1609000)
+center_sf <- st_as_sf(center, coords = c("lon","lat"), crs = 4269)
+search_buff <- st_buffer(center_sf, 1609000)
 
 ggplot() +
   geom_sf(data = counties, color = "white", fill="gray", lwd = 0.05) +
-  geom_sf(data = center_buff, color = "red", fill = NA) +
+  geom_sf(data = search_buff, color = "red", fill = NA) +
   labs(title = "Twitter Search Query Region") +
   theme(
     plot.title = element_text(hjust = 0.5),
@@ -257,8 +257,7 @@ saveRDS(tevent_raw4, here("data", "raw", "private", "tevent_raw4.RDS") )
 **Note:** Instead of using generic tweets to normalize the hurricane tweets, I use Census population data.
 
 
-get tweets without any text filter for the same geographic region in tdcontrol, 
-searched on tdcontrol 19, 2019
+get tweets without any text filter for the same geographic region in tdcontrol.
 the query searches for all verified or unverified tweets, i.e. everything
 
 **Warning**: this code will no longer result in the same data! 
@@ -278,6 +277,14 @@ write.table(tdcontrol_raw$status_id,
   append = FALSE, quote = FALSE, row.names = FALSE, col.names = FALSE
 )
 ```
+
+For the original Hurricane Dorian study, generic tweets were searched for after the hurricane
+on November 19, 2019. I try using this data to normalize the Hurricane Ida tweets in addition to the Census
+data to see if the results are similar (i.e. is population a good proxy for number of non-hurricane tweets?)
+```{r}
+november <- readRDS(here("data", "derived", "private", "november.RDS"))
+```
+
 
 ### Rehydrate the twitter data
 
@@ -597,9 +604,10 @@ overwrite = TRUE,
 install = TRUE
 )
 
-counties <- get_estimates(
+counties <- get_acs(
   "county",
-  product = "population",
+  variables = "B01003_001",
+  year = 2021,
   output = "wide",
   geometry = TRUE,
   keep_geo_vars = TRUE
@@ -618,15 +626,27 @@ https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code
 states <- c(
     "54", "51", "50", "47", "45", "44", "42", "39", "37", "36", "05", "01",
     "34", "33", "29", "28", "25", "24", "23", "22", "21", "18", "17", "13",
-    "12", "11", "10", "09", "48", "40", "20", "19", "26", "55", "27")
+    "12", "11", "10", "09", "48", "40", "20", "19", "26", "55", "27", "38",
+    "46", "31", "35", "08")
 
 counties <- filter(
   counties,
   STATEFP %in% states
-)
+) %>% 
+  rename(POP = "B01003_001E", MOE = "B01003_001M") %>% 
+  mutate(DENSITY = POP/ALAND) # calculate density, not included in ACS
 
-saveRDS(counties, here("data", "derived", "public", "counties.RDS"))
+
+#saveRDS(counties, here("data", "derived", "public", "counties.RDS"))
 ```
+
+```{r}
+state_frame <- data.frame(states)
+
+state_frame %>% arrange(states) %>% 
+       mutate(states = paste(states, collapse=", "))
+```
+
 
 ### Load counties
 
@@ -655,9 +675,9 @@ ggplot() +
     plot.title = element_text(hjust = 0.5),
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
-  )
-  # xlim(-96, -67) +
-  # ylim(24, 47)
+  ) +
+  xlim(-105, -67) +
+  ylim(24, 47)
 
 ```
 
@@ -733,7 +753,7 @@ ggplot() +
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
   ) +
-  xlim(-96, -67) +
+  xlim(-105, -67) +
   ylim(24, 47) +
   theme_minimal()
 ```
@@ -741,8 +761,6 @@ ggplot() +
 ### Plot NDTI using November baseline
 For the original Hurricane Dorian study, a query of generic tweets was searched in November 2019 and used to normalize the tweets. I use this dataset to calculate the NDTI to see how different it is from the Census population results. 
 ```{r}
-november <- readRDS(here("data", "derived", "private", "november.RDS"))
-
 nov_by_county <- november %>%
   st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
   st_transform(4269) %>%
@@ -757,7 +775,8 @@ counties <- counties %>%
 
 counties <- counties %>%
   mutate(ndti_nov = (event_tweets - nov) / (event_tweets + nov)) %>% # normalized diff tweet index
-  mutate(ndti_nov = replace_na(ndti_nov, 0)) # replace NULLs with 0's
+  mutate(ndti_nov = replace_na(ndti_nov, 0)) %>%  # replace NULLs with 0's
+  mutate(ndti_nov = as.numeric(ndti_nov))
 
 ```
 
@@ -776,11 +795,12 @@ ggplot() +
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
   ) +
-  xlim(-96, -67) +
+  xlim(-105, -67) +
   ylim(24, 47) +
   theme_minimal()
 
 # where are the NA values coming from
+# so many 0's because NAs are being replaced with 0?
 ```
 
 # Spatial Cluster Analysis
@@ -872,7 +892,7 @@ ggplot() +
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
   ) +
-  xlim(-96, -67) +
+  xlim(-105, -67) +
   ylim(24, 47)
 ```
 
