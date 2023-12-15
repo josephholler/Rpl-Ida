@@ -9,4 +9,5 @@ data/raw/public,teventids3.txt,,status_ids for tevent_raw3.RDS
 data/raw/public,teventids4.txt,,status_ids for tevent_raw4.RDS
 data/derived/private,tevent_all.RDS,Twitter_metadata.md,all tevent_raw files combined with no duplicates and lat/long columns
 data/derived/public,counties.RDS,county_metadata.md,all counties within Twitter query radius
-data/derived/public,counties_tweet_counts.RDS,county_metadata.md,counties with added columns of number of tweets per county and normalized number of tweets per county
+data/derived/public,searched_counties.RDS,county_metadata.md,counties.RDS filtered by counties that fall within the tweet search area
+data/derived/public,counties_tweet_counts.RDS,county_metadata.md,searched_counties.RDS with added columns of number of tweets per county and normalized number of tweets per county

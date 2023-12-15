@@ -1,1 +1,6 @@
 ﻿path,name,description
+results/figures,ndti_census.jpg,NDTI by county using population / 10000 to normalize
+results/figures,ndti_novtweets.jpg,NDTI by county using November 2021 tweets to normalize
+results/figures,search_viz.jpg,visualization of Twitter search area and Hurricane Ida track
+results/figures,tweet_hotspots.jpg,tweet hotspots determined by Getis Ord
+results/figures,tweet_locations.jpg,locations of tweets plotted over counties colored by population density
