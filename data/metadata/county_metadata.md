@@ -5,7 +5,7 @@
 - `Spatial Reference System`: NAD83 (CRS:4269)
 - `Temporal Coverage`: 2021
 - `Temporal Resolution`: NA
-- `Lineage`: This data was retrieved using a Census API, and the code is included in the study report. 
+- `Lineage`: The first six variables were retrieved using a Census API, and the code is included in the study report. Tweet variables were derived from a combination of the Census and Twitter data (see Twitter_metadata.md). 
 - `Distribution`: Census data is in the public domain.
 - `Constraints`: None
 - `Data Quality`: Margin of error is reported for population, but many values are missing.
@@ -13,12 +13,14 @@
 
 | Label | Alias | Definition | Type | Accuracy | Domain | Missing Data Value(s) | Missing Data Frequency |
 | :--: | :--: | :--: | :--: | :--: | :--: | :--: | :--: |
-| status_id | tweet ID | unique ID assigned to every tweet| integer | ... | ... | ... | ... |
-| created_at | time created | ... | yyy-mm-dd hh:mm:ss | ... | ... | ... | ... |
-| text | tweet content | ... | character string | ... | ... | ... | ... |
-| place_type | geographic subregion | city, neighborhood, poi | character string | ... | ... | ... | ... |
-| geo_coords | geographic coordinates |lat, long | list of numbers | ... | ... | NA | frequent |
-| coords_coords | reversed coordinates |long, lat (R reads as x, y) | list of numbers | ... | ... | NA | frequent |
-| bbox_coords | bounding box coordinates | 4 long and 4 lat coordinates marking the edges of the region for place type | list of numbers | ... | ... | NA | ... |
-| lat | latitude | latitude coordinates from coords_coords or centroid of place_type bounding box | number | ... | ... | ... | ... |
-| lng | longitude | longitude coordinates from coords_coords or centroid of place_type bounding box | number | ... | ... | ... | ... |
+| STATEFP | state FIPS code | unique ID for each state | integer | ... | ... | ... | ... |
+| COUNTYFP | county FIPS code | unique ID for each county | integer | ... | ... | ... | ... |
+| GEOID | geographic ID | unique ID for geometry | integer | ... | ... | ... | ... |
+| ALAND | area land | area of county in square meters | numeric | ... | ... | ... | ... |
+| POP | population | ... | integer | ... | ... | ... | ... |
+| MOE | margin of error | margin of error for population | numeric | ... | ... | NA | frequent |
+| DENSITY | population density | calculated by dividing population by area of land (converted to square miles) | numeric | ... | ... | ... | ... |
+| event_tweets | ... | number of Hurricane Ida tweets from the county | integer | ... | ... | NA replaced with 0 | ... |
+| twitter_pop | twitter population | POP divided by 10,000 to estimate number of generic tweets | numeric | ... | ... | ... | ... |
+| tweetrate | tweet rate | event_tweets / twitter_pop | numeric | ... | ... | ... | ... |
+| ndti | normalized difference tweet index | normalized difference between event_tweets and twitter_pop, between -1 and 1 | numeric  | ... | ... | NA replaced with 0 | ... |

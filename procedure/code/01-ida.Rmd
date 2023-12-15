@@ -360,7 +360,7 @@ tevent_raw4 <- readRDS(here("data", "raw", "private", "tevent_raw4.RDS"))
 
 ### Combine searches
 
-```{r combine-searches, eval = FALSE}
+```{r combine-searches}
 tevent_raw <- rbind(tevent_raw, tevent_raw2, tevent_raw3, tevent_raw4) %>% 
   distinct(status_id, .keep_all=TRUE)
 rm(tevent_raw2, tevent_raw3, tevent_raw4)
@@ -634,17 +634,10 @@ counties <- filter(
   STATEFP %in% states
 ) %>% 
   rename(POP = "B01003_001E", MOE = "B01003_001M") %>% 
-  mutate(DENSITY = POP/ALAND) # calculate density, not included in ACS
+  mutate(DENSITY = POP/ (ALAND/ (2.59*10^6))) # calculate density in people per square mile
 
 
 #saveRDS(counties, here("data", "derived", "public", "counties.RDS"))
-```
-
-```{r}
-state_frame <- data.frame(states)
-
-state_frame %>% arrange(states) %>% 
-       mutate(states = paste(states, collapse=", "))
 ```
 
 
@@ -727,7 +720,7 @@ counties <- counties %>%
 
 
 Save counties as `counties_tweet_counts.RDS`
-```{r save-counties-tweet-counts}
+```{r save-counties-tweet-counts, eval = FALSE}
 # save counties geographic data with derived tweet rates
 saveRDS(counties, here("data", "derived", "public", "counties_tweet_counts.RDS"))
 ```
