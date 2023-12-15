@@ -757,6 +757,7 @@ ggplot() +
 For the original Hurricane Dorian study, a query of generic tweets was searched in November 2019 and used to normalize the tweets. I use this dataset to calculate the NDTI to see how different it is from the Census population results.
 
 ```{r}
+# make november data sf compatible
 nov_by_county <- november %>%
   st_as_sf(coords = c("lng", "lat"), crs = 4326) %>%
   st_transform(4269) %>%
@@ -765,9 +766,11 @@ nov_by_county <- november %>%
   group_by(GEOID) %>%
   summarise(nov = n())
 
+# join november data to counties dataset
 counties <- counties %>%
   left_join(nov_by_county, by = "GEOID")
 
+# calculate NDTI 
 counties <- counties %>%
   mutate(ndti_nov = (event_tweets - nov) / (event_tweets + nov)) %>% # normalized diff tweet index
   mutate(ndti_nov = replace_na(ndti_nov, 0))  # replace NULLs with 0's
@@ -857,7 +860,6 @@ counties <- counties %>%
     siglevel[2],
     max(counties$locG)
   )))
-rm(siglevel)
 
 # map results
 ggplot() +
@@ -875,7 +877,7 @@ ggplot() +
     axis.title.y = element_blank()
   )
 
-ggsave("tweet_hotspots.jpg", plot = last_plot(), path = here("results", "figures"), device = "jpeg")
+# ggsave("tweet_hotspots.jpg", plot = last_plot(), path = here("results", "figures"), device = "jpeg")
 ```
 
 # Results
@@ -905,6 +907,7 @@ network analysis:
 
 ## possible additions
 - in word frequency - take out the parts of words in other words (i.e. flood and flooding) for a more topical analysis
+- neighborhood around significant clusters in getis
 
 # Conclusion
 
