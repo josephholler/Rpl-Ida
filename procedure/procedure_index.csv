@@ -1,3 +1,3 @@
 path,name,purpose
-environment,01-Ida.Rmd,set up computational environment (first code chunk)
+environment,r_environment.txt,set up computational environment (first code chunk)
 code,01-Ida.Rmd,download and preprocess data
