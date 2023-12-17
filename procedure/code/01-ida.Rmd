@@ -36,15 +36,7 @@ Additional deviations from Holler (2019) include visualizing the geographic area
 
 Load the R project saved in the root directory of this repository, so that the working directory is the root directory of the repository.
 
-```{r setup, message = FALSE, warning = FALSE}
-
-# list of required packages
-packages <- c(
-  "here", "svDialogs", "tidyverse",
-  "tidytext", "tm", "igraph", "ggraph",
-  "tidycensus", "sf", "spdep"
-)
-
+```{r here-groundog, message= FALSE, warning = FALSE}
 if(!require(groundhog)){
   install.packages("groundhog")
   require(groundhog)
@@ -58,9 +50,45 @@ if(!require(here)){
 # install r version from 9-10-2021
 groundhog.day <- "2021-09-10"
 set.groundhog.folder(here("data", "scratch", "groundhog"))
+```
 
-groundhog.library(packages, groundhog.day)
 
+```{r list-packages}
+# list of required packages
+packages <- c("tidyverse", "tidycensus", "tm", "igraph",
+  "tidytext", "tm", "igraph"
+)
+
+# "ggraph",
+#  "tidycensus", "sf", "spdep", "rtweet", "remotes", "devtools"
+
+```
+
+```{r groundhog-packages}
+groundhog.library(packages,
+                  groundhog.day,
+                  tolerate.R.version='4.3.1',
+                  ignore.deps = c("knitr", "rprojroot", "xfun") )
+```
+
+
+
+```{r setup, message = FALSE, warning = FALSE}
+
+# list of required packages
+packages <- c(
+  "here", "tidyverse",
+  "tidytext", "tm", "igraph", "ggraph",
+  "tidycensus", "sf", "spdep", "rtweet", "remotes", "devtools"
+)
+
+groundhog.library(packages, groundhog.day, tolerate.R.version='4.3.1',
+                  ignore.deps = c("knitr", "rprojroot", "xfun"))
+```
+
+
+
+```{r old-load-way, message = FALSE, warning = FALSE}
 # load and install required packages
 package_check <- lapply(
   packages,
@@ -71,25 +99,17 @@ package_check <- lapply(
     }
   }
 )
-
-# Load the 'remotes' package
-#install.packages("remotes")
-library(remotes)
-
-# install a previous version of rtweet
-# in 2021, would have been version 0.7.0.
-
-# detach("package:rtweet", unload = TRUE) # run this line if a current version of rtweet is already installed
-library(devtools)
-install_version("rtweet", version = "0.7.0")
-library(rtweet)
-
-# save the R processing environment
-# writeLines(
-#   capture.output(sessionInfo()),
-#   here("procedure", "environment", "r_environment.txt")
-# )
 ```
+
+
+```{r save-envir, message = FALSE, warning = FALSE}
+# save the R processing environment
+writeLines(
+  capture.output(sessionInfo()),
+  here("procedure", "environment", "r_environment.txt")
+)
+```
+
 
 # Load data from Census
 
